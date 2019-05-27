@@ -48,7 +48,7 @@ game.MainReady()
 
 # each player take random actions until game ends
 while (game.State != State.COMPLETE):
-	print('player 1 HP %d, player 2 HP %d' % (game.Player1.Hero.Health, game.Player1.Hero.Health))
+	print('player 1 HP %d, player 2 HP %d' % (game.Player1.Hero.Health, game.Player2.Hero.Health))
 	options = game.CurrentPlayer.Options()
 	option = options[random.randint(0, len(options) - 1)]
 	print(option.FullPrint())
