@@ -39,7 +39,7 @@ game = Game(cfg)
 
 # game start
 game.StartGame()
-print('player 1 HP %d, player 2 HP %d' % (game.Player1.Hero.Health, game.Player1.Hero.Health))
+print('player 1 HP %d, player 2 HP %d' % (game.Player1.Hero.Health, game.Player2.Hero.Health))
 
 # mulligan
 game.Process(ChooseTask.Mulligan(game.Player1, List[int]()))
