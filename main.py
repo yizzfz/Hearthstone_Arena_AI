@@ -19,9 +19,10 @@ environments_to_names = {
 @click.version_option()
 def cli():
     """
-        Ticking Bomb --- Attacks on Reinforcement Learning agents.
+        The Witch --- a hearthstone AI.
         Authors:
             Aaron Zhao, yaz21@cam.ac.uk
+            Han Cui,
     """
 
 
@@ -82,16 +83,20 @@ def train(
 
 
 @click.command(help="Use the agent to play the game")
+@click.argument('method')
 @click.argument('environment')
-def autoplay(environment):
-    game = Game(name=environments_to_names[environment], render=True)
+@click.option('resume', '--resume', default=None, type=str)
+@click.option('render', '--render', default=True, type=bool)
+def autoplay(
+        method, environment, resume, render):
+    game = Game(name=environments_to_names[environment], render=render)
 
     init_state, state_shape = game.get_state(True)
     n_actions = game.env.action_space.n
     agent_cls = agent_factory[method]
     agent = agent_cls(state_shape, n_actions)
 
-    log.info(f'Training with {num_episodes}, starting ...')
+    log.info(f'Evaluating agent, loaded from {resume}, starting ...')
 
     game.reset()
     state = game.get_state()
@@ -99,8 +104,8 @@ def autoplay(environment):
         action = agent.select_action(state)
         transition, done = game.step(
             int(action.numpy()))
-        agent.eval(
-            transition, 1, 0.0)
+        # agent.eval(
+        #     transition, 1, 0.0)
         if done:
             game.reset()
             break
@@ -125,6 +130,7 @@ def play(environment):
 
 cli.add_command(train)
 cli.add_command(play)
+cli.add_command(autoplay)
 
 
 if __name__ == '__main__':

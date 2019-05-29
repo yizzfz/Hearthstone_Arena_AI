@@ -9,7 +9,7 @@ from util import Transition, device
 
 class Game():
     # A wrapper for an openai game
-    def __init__(self, name, memory, render=False, force_screen=False):
+    def __init__(self, name, memory=None, render=False, force_screen=False):
         self.render = render
         self.memory = memory
         self.force_screen = force_screen
@@ -48,7 +48,8 @@ class Game():
         return self.state
 
     def store_to_memory(self, transition):
-        self.memory.push(transition)
+        if self.memory is not None:
+            self.memory.push(transition)
 
     def step(self, action, return_done=True):
         # step and store transition
