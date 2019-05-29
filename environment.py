@@ -65,7 +65,8 @@ class Game():
         if self.render:
             self.env.render()
         if return_done:
-            return done
+            return transition, done
+        return transition
 
     def reset(self):
         self.state = self.env.reset()

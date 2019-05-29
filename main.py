@@ -5,6 +5,8 @@ import torch
 from environment import Game
 from agents import agent_factory
 from util import ReplayMemory
+from itertools import count
+from log import log
 
 environments_to_names = {
     'cartpole': 'CartPole-v0',
@@ -17,10 +19,9 @@ environments_to_names = {
 @click.version_option()
 def cli():
     """
-        Witch --- An automatic Witch that plays hearthstone Arena.
+        Ticking Bomb --- Attacks on Reinforcement Learning agents.
         Authors:
             Aaron Zhao, yaz21@cam.ac.uk
-            Han Cui,
     """
 
 
@@ -35,11 +36,14 @@ def cli():
 @click.option('eval_only', '--eval_only', is_flag=True)
 @click.option('replay_width', '--replay_width', default=1000, type=int)
 @click.option('num_episodes', '--num_episodes', default=100, type=int)
+@click.option('batch_size', '--batch_size', default=128, type=int)
+@click.option('gamma', '--gamma', default=0.01, type=float)
 def train(
         method, environment,
         resume, episodes,
         lr, lr_episodes, min_lr,
-        eval_only, replay_width, num_episodes):
+        eval_only, replay_width, num_episodes,
+        batch_size, gamma):
     memory = ReplayMemory(replay_width)
     game = Game(
         name=environments_to_names[environment],
@@ -49,8 +53,27 @@ def train(
     agent_cls = agent_factory[method]
     agent = agent_cls(state_shape, n_actions)
 
+    log.info(f'Training with {num_episodes}, starting ...')
+
     for i in range(num_episodes):
-        pass
+        game.reset()
+        state = game.get_state()
+        for t in count():
+            action = agent.select_action(state)
+            transition, done = game.step(
+                int(action.numpy()))
+
+            if len(memory) < batch_size:
+                if done:
+                    game.reset()
+                    break
+                continue
+            batched = memory.sample(batch_size)
+            agent.train(
+                batched, batch_size, gamma, f'{i}/{num_episodes}')
+            if done:
+                game.reset()
+                break
 
     game.env.close()
 
@@ -64,9 +87,9 @@ def play(environment):
         while not done:
             action = click.prompt('Please enter an action (0, 1, 2, 3..)')
             done = game.step(int(action))
-        print('[INFO] done ...')
+        log.info('[INFO] done ...')
     except KeyboardInterrupt:
-        print("[INFO] quiting ...")
+        log.info("[INFO] quiting ...")
         exit()
 
 
