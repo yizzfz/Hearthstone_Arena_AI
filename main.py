@@ -55,6 +55,7 @@ def train(
 
     log.info(f'Training with {num_episodes}, starting ...')
 
+    # main training loop
     for i in range(num_episodes):
         game.reset()
         state = game.get_state()
@@ -63,11 +64,13 @@ def train(
             transition, done = game.step(
                 int(action.numpy()))
 
+            # Cache data if memory is not filled
             if len(memory) < batch_size:
                 if done:
                     game.reset()
                     break
                 continue
+            # train with data from the replay memory
             batched = memory.sample(batch_size)
             agent.train(
                 batched, batch_size, gamma, f'{i}/{num_episodes}')
@@ -78,7 +81,34 @@ def train(
     game.env.close()
 
 
-@click.command(help="You can play with the agent")
+@click.command(help="Use the agent to play the game")
+@click.argument('environment')
+def autoplay(environment):
+    game = Game(name=environments_to_names[environment], render=True)
+
+    init_state, state_shape = game.get_state(True)
+    n_actions = game.env.action_space.n
+    agent_cls = agent_factory[method]
+    agent = agent_cls(state_shape, n_actions)
+
+    log.info(f'Training with {num_episodes}, starting ...')
+
+    game.reset()
+    state = game.get_state()
+    for t in count():
+        action = agent.select_action(state)
+        transition, done = game.step(
+            int(action.numpy()))
+        agent.eval(
+            transition, 1, 0.0)
+        if done:
+            game.reset()
+            break
+
+    game.env.close()
+
+
+@click.command(help="You can play the game")
 @click.argument('environment')
 def play(environment):
     game = Game(name=environments_to_names[environment], render=True)

@@ -1,6 +1,6 @@
 from .base import BaseAgent, LinearHead, ConvHead
 from torch import nn
-from util import Transition, device
+from util import Transition, MovingAverage, device
 from torch.nn import functional as F
 import torch
 from log import log
@@ -45,6 +45,8 @@ class DQN(BaseAgent):
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
         self.step_cnt = 0
+        self.avg_loss = MovingAverage(1000)
+        self.avg_reward = MovingAverage(1000)
 
 
     def train(self, batch, batch_size, gamma, time_stamp):
@@ -82,9 +84,13 @@ class DQN(BaseAgent):
             next_state_values * gamma) + reward_batch
         loss = F.smooth_l1_loss(state_action_values,
                                 expected_state_action_values.unsqueeze(1))
+        # moving averages
+        self.avg_loss.add(loss)
+        self.avg_reward.add(expected_state_action_values.mean())
         text = [
             f'epochs: {time_stamp}',
-            f'train loss: {loss:.3f}',
+            f'train loss: {self.avg_loss:s}',
+            f'expected Q: {self.avg_reward:s}',
         ]
         log.info(', '.join(text), update=True)
         optimizer.zero_grad()
