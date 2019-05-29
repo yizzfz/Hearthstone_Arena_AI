@@ -10,7 +10,7 @@ class BaseAgent():
         self.eps_start = eps_start
         self.eps_end = eps_end
         self.eps_decay = eps_decay
-
+        self.best_loss = None
 
     def select_action(self, state):
         sample = random.random()
@@ -29,6 +29,14 @@ class BaseAgent():
             return torch.tensor(
                 [[random.randrange(self.n_actions)]],
                 device=device, dtype=torch.long)
+
+    def save_best(self):
+        best_loss = self.best_loss if self.best_loss is not None else 1000
+
+        if best_loss <= self.avg_loss.mean():
+            return
+        self.save()
+        self.best_loss = self.avg_loss.mean()
 
 
 class LinearHead(nn.Module):

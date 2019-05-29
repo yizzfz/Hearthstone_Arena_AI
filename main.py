@@ -30,7 +30,7 @@ def cli():
 @click.argument('method')
 @click.argument('environment')
 @click.option('resume', '--resume', default=None, type=str)
-@click.option('episodes', '--episodes', default=None, type=int)
+@click.option('episodes', '--episodes', default=100, type=int)
 @click.option('lr', '--lr', default=0.1, type=float)
 @click.option('lr_episodes', '--lr_episodes', default=50, type=int)
 @click.option('min_lr', '--min_lr', default=0.00001, type=float)
@@ -39,12 +39,13 @@ def cli():
 @click.option('num_episodes', '--num_episodes', default=100, type=int)
 @click.option('batch_size', '--batch_size', default=128, type=int)
 @click.option('gamma', '--gamma', default=0.01, type=float)
+@click.option('update_rate', '--update_rate', default=10, type=int)
 def train(
         method, environment,
         resume, episodes,
         lr, lr_episodes, min_lr,
-        eval_only, replay_width, num_episodes,
-        batch_size, gamma):
+        eval_only, replay_width,
+        batch_size, gamma, update_rate):
     memory = ReplayMemory(replay_width)
     game = Game(
         name=environments_to_names[environment],
@@ -52,12 +53,17 @@ def train(
     init_state, state_shape = game.get_state(True)
     n_actions = game.env.action_space.n
     agent_cls = agent_factory[method]
-    agent = agent_cls(state_shape, n_actions)
+    agent = agent_cls(
+        state_shape, n_actions, environment, episodes, update_rate)
 
-    log.info(f'Training with {num_episodes}, starting ...')
+    # resume from a ckpt
+    if resume is not None:
+        agent.load(resume)
+
+    log.info(f'Training with {episodes}, starting ...')
 
     # main training loop
-    for i in range(num_episodes):
+    for i in range(episodes):
         game.reset()
         state = game.get_state()
         for t in count():
@@ -74,11 +80,11 @@ def train(
             # train with data from the replay memory
             batched = memory.sample(batch_size)
             agent.train(
-                batched, batch_size, gamma, f'{i}/{num_episodes}')
+                batched, batch_size, gamma, i)
             if done:
                 game.reset()
+                agent.save_best()
                 break
-
     game.env.close()
 
 
@@ -94,7 +100,8 @@ def autoplay(
     init_state, state_shape = game.get_state(True)
     n_actions = game.env.action_space.n
     agent_cls = agent_factory[method]
-    agent = agent_cls(state_shape, n_actions)
+    agent = agent_cls(state_shape, n_actions, environment, 1, 1)
+    agent.load(resume)
 
     log.info(f'Evaluating agent, loaded from {resume}, starting ...')
 

@@ -7,7 +7,6 @@ from log import log
 
 
 class DQN_Net(nn.Module):
-
     def __init__(self, head, n_actions, expand=1):
         super(DQN_Net, self).__init__()
         self.head = head
@@ -28,8 +27,13 @@ class DQN_Net(nn.Module):
 
 
 class DQN(BaseAgent):
+    '''
+    The dqn implementation largely depends on:
+    https: // pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+    '''
     def __init__(
-            self, state_shape, n_actions, eps_start=0.9,
+            self, state_shape, n_actions, env_name, episodes,
+            update_rate=10, eps_start=0.9,
             eps_end=0.05, eps_decay=200):
         super(DQN, self).__init__(
             eps_start, eps_end, eps_decay
@@ -39,7 +43,11 @@ class DQN(BaseAgent):
         else:
             self.head = ConvHead(state_shape)
 
+        self.episodes = episodes
+        self.update_rate = update_rate
         self.n_actions = n_actions
+        self.name='checkpoints/dqn_' + env_name
+
         self.policy_net = DQN_Net(self.head, n_actions)
         self.target_net = DQN_Net(self.head, n_actions)
         self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -50,11 +58,9 @@ class DQN(BaseAgent):
 
 
     def train(self, batch, batch_size, gamma, time_stamp):
-
         if len(batch) < batch_size:
             return
         optimizer=torch.optim.RMSprop(self.policy_net.parameters())
-
         batch = Transition(*zip(*batch))
         non_final_mask = torch.tensor(
             tuple(map(lambda s: s is not None, batch.next_state)),
@@ -88,7 +94,7 @@ class DQN(BaseAgent):
         self.avg_loss.add(loss)
         self.avg_reward.add(expected_state_action_values.mean())
         text = [
-            f'epochs: {time_stamp}',
+            f'epochs: {time_stamp}/{self.episodes}',
             f'train loss: {self.avg_loss:s}',
             f'expected Q: {self.avg_reward:s}',
         ]
@@ -98,4 +104,15 @@ class DQN(BaseAgent):
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         optimizer.step()
+        if time_stamp % self.update_rate == 0:
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+
+    def save(self):
+        state_dict = self.policy_net.state_dict()
+        torch.save(state_dict, self.name)
+
+
+    def load(self, name):
+        state = torch.load(name, device)
+        self.policy_net.load_state_dict(state)
 
