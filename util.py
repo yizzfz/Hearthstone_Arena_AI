@@ -14,7 +14,7 @@ device = torch.device('cuda' if use_cuda else 'cpu')
 
 def to_numpy(x: torch.tensor):
     if device == 'gpu':
-        return x.to('cpu').data.numpy()
+        return x.cpu().data.numpy()
     return x.data.numpy()
 
 def to_torch_var(x: np.ndarray):

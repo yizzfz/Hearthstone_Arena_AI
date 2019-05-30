@@ -86,13 +86,15 @@ class DQN(BaseAgent):
         next_states = np.vstack([x.next_state for x in batch])
         done = np.vstack([x.done for x in batch])
 
-        Q_pred = self.get_Q(states)
-        Q_target = to_numpy(Q_pred.clone())
+        actions = to_torch_var(actions).long()
+        Q_pred = self.get_Q(states).gather(1, actions)
+        # Q_target = to_numpy(Q_pred.clone())
         done_mask = (~done).astype(np.float)
         Q_expected = np.max(to_numpy(self.get_Q_actor(next_states)), axis=1)
         Q_expected = np.expand_dims(Q_expected, axis=1)
-        Q_target[np.arange(len(Q_target)), actions] = \
-            rewards + gamma * Q_expected * done_mask
+        Q_expected = done_mask * Q_expected
+        # Q_target[np.arange(len(Q_target)), actions] = \
+        Q_target = rewards + gamma * Q_expected
         Q_target = to_torch_var(Q_target)
         loss = F.smooth_l1_loss(Q_pred, Q_target)
         # non_final_mask = torch.tensor(
