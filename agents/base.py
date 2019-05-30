@@ -30,13 +30,13 @@ class BaseAgent():
                 [[random.randrange(self.n_actions)]],
                 device=device, dtype=torch.long)
 
-    def save_best(self):
-        best_loss = self.best_loss if self.best_loss is not None else 1000
+    def save_best(self, loss):
+        best_loss = loss if self.best_loss is not None else 1000
 
-        if best_loss <= self.avg_loss.mean():
+        if best_loss <= loss:
             return
         self.save()
-        self.best_loss = self.avg_loss.mean()
+        self.best_loss = loss
 
 
 class LinearHead(nn.Module):

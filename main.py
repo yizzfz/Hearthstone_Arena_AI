@@ -7,6 +7,8 @@ from agents import agent_factory
 from util import ReplayMemory
 from itertools import count
 from log import log
+from util import MovingAverage
+
 
 environments_to_names = {
     'cartpole': 'CartPole-v0',
@@ -36,7 +38,6 @@ def cli():
 @click.option('min_lr', '--min_lr', default=0.00001, type=float)
 @click.option('eval_only', '--eval_only', is_flag=True)
 @click.option('replay_width', '--replay_width', default=1000, type=int)
-@click.option('num_episodes', '--num_episodes', default=100, type=int)
 @click.option('batch_size', '--batch_size', default=128, type=int)
 @click.option('gamma', '--gamma', default=0.01, type=float)
 @click.option('update_rate', '--update_rate', default=10, type=int)
@@ -60,8 +61,10 @@ def train(
     if resume is not None:
         agent.load(resume)
 
-    log.info(f'Training with {episodes}, starting ...')
+    avg_reward = MovingAverage(1000)
+    avg_loss = MovingAverage(1000)
 
+    log.info(f'Training with {episodes}, starting ...')
     # main training loop
     for i in range(episodes):
         game.reset()
@@ -74,17 +77,30 @@ def train(
             # Cache data if memory is not filled
             if len(memory) < batch_size:
                 if done:
+                    avg_reward.add(game.average_rewards())
                     game.reset()
                     break
                 continue
             # train with data from the replay memory
             batched = memory.sample(batch_size)
-            agent.train(
+            loss = agent.train(
                 batched, batch_size, gamma, i)
             if done:
+                if loss is not None:
+                    avg_loss.add(loss)
+                avg_reward.add(game.average_rewards())
                 game.reset()
-                agent.save_best()
+                agent.save_best(loss)
                 break
+        # moving averages
+        text = [
+            f'epochs: {i}/{episodes}',
+            f'train loss: {avg_loss:s}',
+            f'avg reward: {avg_reward:3f}',
+        ]
+        log.info(', '.join(text), update=True)
+
+
     game.env.close()
 
 

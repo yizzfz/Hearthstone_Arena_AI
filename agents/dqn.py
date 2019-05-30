@@ -53,13 +53,11 @@ class DQN(BaseAgent):
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
         self.step_cnt = 0
-        self.avg_loss = MovingAverage(1000)
-        self.avg_reward = MovingAverage(1000)
 
 
     def train(self, batch, batch_size, gamma, time_stamp):
         if len(batch) < batch_size:
-            return
+            return None
         optimizer=torch.optim.RMSprop(self.policy_net.parameters())
         batch = Transition(*zip(*batch))
         non_final_mask = torch.tensor(
@@ -90,15 +88,6 @@ class DQN(BaseAgent):
             next_state_values * gamma) + reward_batch
         loss = F.smooth_l1_loss(state_action_values,
                                 expected_state_action_values.unsqueeze(1))
-        # moving averages
-        self.avg_loss.add(loss)
-        self.avg_reward.add(expected_state_action_values.mean())
-        text = [
-            f'epochs: {time_stamp}/{self.episodes}',
-            f'train loss: {self.avg_loss:s}',
-            f'expected Q: {self.avg_reward:s}',
-        ]
-        log.info(', '.join(text), update=True)
         optimizer.zero_grad()
         loss.backward()
         for param in self.policy_net.parameters():
@@ -106,6 +95,7 @@ class DQN(BaseAgent):
         optimizer.step()
         if time_stamp % self.update_rate == 0:
             self.target_net.load_state_dict(self.policy_net.state_dict())
+        return loss
 
     def save(self):
         state_dict = self.policy_net.state_dict()
