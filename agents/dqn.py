@@ -48,8 +48,8 @@ class DQN(BaseAgent):
         self.n_actions = n_actions
         self.name='checkpoints/dqn_' + env_name
 
-        self.policy_net = DQN_Net(self.head, n_actions)
-        self.target_net = DQN_Net(self.head, n_actions)
+        self.policy_net = DQN_Net(self.head, n_actions).to(device)
+        self.target_net = DQN_Net(self.head, n_actions).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
         self.step_cnt = 0

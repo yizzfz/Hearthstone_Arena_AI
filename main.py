@@ -7,7 +7,7 @@ from agents import agent_factory
 from util import ReplayMemory
 from itertools import count
 from log import log
-from util import MovingAverage
+from util import MovingAverage, device
 
 
 environments_to_names = {
@@ -72,7 +72,7 @@ def train(
         for t in count():
             action = agent.select_action(state)
             transition, done = game.step(
-                int(action.numpy()))
+                int(action.to('cpu').numpy()))
 
             # Cache data if memory is not filled
             if len(memory) < batch_size:
