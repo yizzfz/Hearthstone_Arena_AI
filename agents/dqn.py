@@ -31,6 +31,7 @@ class DQN(BaseAgent):
     '''
     The dqn implementation largely depends on:
     https: // pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+    https://github.com/transedward/pytorch-dqn
     '''
     def __init__(
             self, state_shape, n_actions, env_name, episodes,
@@ -85,47 +86,18 @@ class DQN(BaseAgent):
         rewards = np.vstack([x.reward for x in batch])
         next_states = np.vstack([x.next_state for x in batch])
         done = np.vstack([x.done for x in batch])
-
         actions = to_torch_var(actions).long()
+
         Q_pred = self.get_Q(states).gather(1, actions)
-        # Q_target = to_numpy(Q_pred.clone())
         done_mask = (~done).astype(np.float)
         Q_expected = np.max(to_numpy(self.get_Q_actor(next_states)), axis=1)
         Q_expected = np.expand_dims(Q_expected, axis=1)
         Q_expected = done_mask * Q_expected
-        # Q_target[np.arange(len(Q_target)), actions] = \
         Q_target = rewards + gamma * Q_expected
         Q_target = to_torch_var(Q_target)
+
         loss = F.smooth_l1_loss(Q_pred, Q_target)
-        # non_final_mask = torch.tensor(
-        #     tuple(map(lambda s: s is not None, batch.next_state)),
-        #     device=device,
-        #     dtype=torch.uint8)
-
-        # non_final_next_states = [
-        #     torch.tensor([s], device=device, dtype=torch.float)
-        #     for s in batch.next_state if s is not None]
-        # non_final_next_states = torch.cat(non_final_next_states, dim=0)
-        # state_np = [torch.tensor([s], device=device, dtype=torch.float) for s in batch.state]
-        # action_np = [torch.tensor([s], device=device, dtype=torch.long) for s in batch.action]
-        # reward_np = [torch.tensor([s], device=device) for s in batch.reward]
-
-        # state_batch = torch.cat(state_np)
-        # action_batch = torch.cat(action_np)
-        # reward_batch = torch.cat(reward_np)
-        # next_state_values = torch.zeros(batch_size, device=device)
-
-        # tmp = self.policy_net(state_batch)
-        # # pick state_action value using action batch
-        # state_action_values = self.policy_net(state_batch).gather(
-        #     1, action_batch.unsqueeze(-1))
-        # next_state_values[non_final_mask] = self.target_net(
-        #     non_final_next_states).max(1)[0].detach()
-        # expected_state_action_values = (
-        #     next_state_values * gamma) + reward_batch
-        # loss = F.smooth_l1_loss(state_action_values,
-        #                         expected_state_action_values.unsqueeze(1))
-        # optimizer.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
         for param in self.net.parameters():
             param.grad.data.clamp_(-1, 1)
