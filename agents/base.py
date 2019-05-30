@@ -16,7 +16,6 @@ class BaseAgent():
         sample = random.random()
         sampling_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1 * self.step_cnt / self.eps_decay)
-        self.step_cnt += 1
         if sample > sampling_threshold and self.step_cnt > 100000:
             with torch.no_grad():
                 if isinstance(state, np.ndarray):
@@ -43,8 +42,7 @@ class LinearHead(nn.Module):
     def __init__(self, in_features):
         super().__init__()
         layers = [
-            nn.Linear(in_features, 256),
-            nn.Dropout(p=0.75)
+            nn.Linear(in_features, 256)
         ]
         self.layers = nn.Sequential(*layers)
 

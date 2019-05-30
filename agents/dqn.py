@@ -13,10 +13,9 @@ class DQN_Net(nn.Module):
         self.head = head
         layers = [
             nn.Linear(256, 512*expand),
-            nn.Dropout(p=0.75),
             nn.ReLU(),
             nn.Linear(512*expand, 1024*expand),
-            nn.Dropout(p=0.75),
+            nn.Dropout(p=0.25),
             nn.ReLU(),
             nn.Linear(1024*expand, n_actions)
         ]
@@ -30,7 +29,7 @@ class DQN_Net(nn.Module):
 class DQN(BaseAgent):
     '''
     The dqn implementation largely depends on:
-    https: // pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+    https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
     https://github.com/transedward/pytorch-dqn
     '''
     def __init__(
