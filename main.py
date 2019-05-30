@@ -132,9 +132,8 @@ def autoplay(
         action = agent.select_action(state)
         transition, done = game.step(
             int(action.numpy()))
-        # agent.eval(
-        #     transition, 1, 0.0)
         if done:
+            log.info(f'agent survived {t} steps')
             game.reset()
             break
 

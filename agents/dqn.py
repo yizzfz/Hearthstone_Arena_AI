@@ -88,6 +88,7 @@ class DQN(BaseAgent):
         done = np.vstack([x.done for x in batch])
         actions = to_torch_var(actions).long()
 
+
         Q_pred = self.get_Q(states).gather(1, actions)
         done_mask = (~done).astype(np.float)
         Q_expected = np.max(to_numpy(self.get_Q_actor(next_states)), axis=1)
@@ -113,5 +114,5 @@ class DQN(BaseAgent):
 
     def load(self, name):
         state = torch.load(name, device)
-        self.policy_net.load_state_dict(state)
+        self.net.load_state_dict(state)
 
