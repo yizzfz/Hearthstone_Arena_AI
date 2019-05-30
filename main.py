@@ -56,7 +56,7 @@ def train(
     agent_cls = agent_factory[method]
     agent = agent_cls(
         state_shape, n_actions, environment, episodes, update_rate,
-        step_size=lr_episodes)
+        step_size=lr_episodes, lr=lr)
 
     # resume from a ckpt
     if resume is not None:
