@@ -13,7 +13,7 @@ torch_cuda = torch.cuda if use_cuda else torch
 device = torch.device('cuda' if use_cuda else 'cpu')
 
 def to_numpy(x: torch.tensor):
-    if device == 'gpu':
+    if x.device.type == 'cuda':
         return x.cpu().data.numpy()
     return x.data.numpy()
 
