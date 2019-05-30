@@ -5,13 +5,19 @@ from collections import namedtuple
 
 
 Transition = namedtuple('Transition',
-                        ('state', 'next_state', 'action',  'reward'))
+                        ('state', 'next_state', 'action', 'reward', 'done'))
 
 
 use_cuda = torch.cuda.is_available()
 torch_cuda = torch.cuda if use_cuda else torch
 device = torch.device('cuda' if use_cuda else 'cpu')
 
+def to_numpy(x: torch.tensor):
+    return x.data.numpy()
+
+def to_torch_var(x: np.ndarray):
+    return torch.tensor(x, device=device, dtype=torch.float32)
+    # return torch.autograd.Variable(torch.Tensor(x, device=device))
 
 class ReplayMemory(object):
     def __init__(self, capacity):

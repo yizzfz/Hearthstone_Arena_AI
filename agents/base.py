@@ -17,13 +17,13 @@ class BaseAgent():
         sampling_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1 * self.step_cnt / self.eps_decay)
         self.step_cnt += 1
-        if sample > sampling_threshold:
+        if sample > sampling_threshold and self.step_cnt > 100000:
             with torch.no_grad():
                 if isinstance(state, np.ndarray):
                     state = torch.tensor(
                         state, device=device, dtype=torch.float)
                 return torch.tensor(
-                    [[torch.argmax(self.policy_net(state))]],
+                    [[torch.argmax(self.actor_net(state))]],
                     device=device, dtype=torch.long)
         else:
             return torch.tensor(

@@ -60,7 +60,7 @@ class Game():
             self.last_screen = self.current_screen
             self.current_screen = self.get_screen()
             next_state = self.current_screen
-        transition = Transition(self.state, next_state, action, reward)
+        transition = Transition(self.state, next_state, action, reward, done)
         self.store_to_memory(transition)
         # update state
         self.state = next_state

@@ -48,6 +48,7 @@ def train(
         eval_only, replay_width,
         batch_size, gamma, update_rate):
     memory = ReplayMemory(replay_width)
+
     game = Game(
         name=environments_to_names[environment],
         memory=memory, render=False)
@@ -55,7 +56,8 @@ def train(
     n_actions = game.env.action_space.n
     agent_cls = agent_factory[method]
     agent = agent_cls(
-        state_shape, n_actions, environment, episodes, update_rate,
+        state_shape, n_actions, environment,
+        episodes, update_rate,
         step_size=lr_episodes, lr=lr)
 
     # resume from a ckpt
@@ -72,6 +74,7 @@ def train(
         state = game.get_state()
         for t in count():
             action = agent.select_action(state)
+
             transition, done = game.step(
                 int(action.to('cpu').numpy()))
 
