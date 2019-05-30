@@ -34,7 +34,7 @@ class DQN(BaseAgent):
     def __init__(
             self, state_shape, n_actions, env_name, episodes,
             update_rate=10, eps_start=0.9,
-            eps_end=0.05, eps_decay=200):
+            eps_end=0.05, eps_decay=200, step_size=1000, decay_factor=0.5):
         super(DQN, self).__init__(
             eps_start, eps_end, eps_decay
         )
@@ -53,12 +53,17 @@ class DQN(BaseAgent):
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
         self.step_cnt = 0
+        self.step_size = step_size
+        self.decay_factor = decay_factor
 
 
     def train(self, batch, batch_size, gamma, time_stamp):
+        self.step_cnt += 1
         if len(batch) < batch_size:
             return None
-        optimizer=torch.optim.RMSprop(self.policy_net.parameters())
+        optimizer= torch.optim.RMSprop(self.policy_net.parameters())
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, self.step_size, self.decay_factor)
         batch = Transition(*zip(*batch))
         non_final_mask = torch.tensor(
             tuple(map(lambda s: s is not None, batch.next_state)),
@@ -92,7 +97,7 @@ class DQN(BaseAgent):
         loss.backward()
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
-        optimizer.step()
+        scheduler.step()
         if time_stamp % self.update_rate == 0:
             self.target_net.load_state_dict(self.policy_net.state_dict())
         return loss

@@ -34,7 +34,7 @@ def cli():
 @click.option('resume', '--resume', default=None, type=str)
 @click.option('episodes', '--episodes', default=100, type=int)
 @click.option('lr', '--lr', default=0.1, type=float)
-@click.option('lr_episodes', '--lr_episodes', default=50, type=int)
+@click.option('lr_episodes', '--lr_episodes', default=1000000, type=int)
 @click.option('min_lr', '--min_lr', default=0.00001, type=float)
 @click.option('eval_only', '--eval_only', is_flag=True)
 @click.option('replay_width', '--replay_width', default=1000, type=int)
@@ -55,7 +55,8 @@ def train(
     n_actions = game.env.action_space.n
     agent_cls = agent_factory[method]
     agent = agent_cls(
-        state_shape, n_actions, environment, episodes, update_rate)
+        state_shape, n_actions, environment, episodes, update_rate,
+        step_size=lr_episodes)
 
     # resume from a ckpt
     if resume is not None:
@@ -94,7 +95,8 @@ def train(
                 break
         # moving averages
         text = [
-            f'epochs: {i}/{episodes}',
+            f'steps: {agent.step_cnt}',
+            f'game epochs: {i}/{episodes}',
             f'train loss: {avg_loss:s}',
             f'avg reward: {avg_reward:3f}',
         ]
