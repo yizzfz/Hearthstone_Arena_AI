@@ -8,17 +8,17 @@ from log import log
 
 
 class DQN_Net(nn.Module):
-    def __init__(self, head, n_actions, expand=1):
+    def __init__(self, head, n_actions, expand=2):
         super(DQN_Net, self).__init__()
         self.head = head
         layers = [
-            nn.Linear(256, 512*expand),
-            nn.BatchNorm1d(512*expand),
+            nn.Linear(16, 16*expand),
+            nn.BatchNorm1d(16*expand),
             nn.ReLU(),
-            nn.Linear(512*expand, 1024*expand),
-            nn.BatchNorm1d(1024*expand),
+            nn.Linear(16*expand, 16*expand),
+            nn.BatchNorm1d(16*expand),
             nn.ReLU(),
-            nn.Linear(1024*expand, n_actions)
+            nn.Linear(16*expand, n_actions)
         ]
         self.layers = nn.Sequential(*layers)
 
@@ -36,7 +36,7 @@ class DQN(BaseAgent):
     def __init__(
             self, state_shape, n_actions, env_name, episodes,
             update_rate=10, eps_start=0.99,
-            eps_end=0.01, eps_decay=10000, step_size=1000,
+            eps_end=0.01, eps_decay=5000, step_size=1000,
             decay_factor=0.5, lr=0.01):
         super(DQN, self).__init__(
             eps_start, eps_end, eps_decay
@@ -52,33 +52,38 @@ class DQN(BaseAgent):
         self.name='checkpoints/dqn_' + env_name
 
         self.net = DQN_Net(self.head, n_actions).to(device)
-        self.actor_net = DQN_Net(self.head, n_actions).to(device)
+        # self.actor_net = DQN_Net(self.head, n_actions).to(device)
 
-        self.actor_net.load_state_dict(self.net.state_dict())
-        self.actor_net.eval()
+        # self.actor_net.load_state_dict(self.net.state_dict())
+        # self.actor_net.eval()
         self.step_cnt = 0
         self.step_size = step_size
         self.decay_factor = decay_factor
         self.lr = lr
 
-    def get_Q_actor(self, states:np.ndarray):
-        states = to_torch_var(states)
-        return self.actor_net(states)
+        self.optimizer = torch.optim.Adam(self.net.parameters())
+        self.lossfn = torch.nn.MSELoss()
+
+
+    # def get_Q_actor(self, states:np.ndarray):
+    #     states = to_torch_var(states)
+    #     return self.actor_net(states)
 
     def get_Q(self, states:np.ndarray):
         states = to_torch_var(states)
         return self.net(states)
 
     def train(self, batch, batch_size, gamma, time_stamp):
+        self.net.train()
         self.step_cnt += 1
         assert(len(batch) == batch_size)
         if len(batch) < batch_size:
             return None
         # set up optimziers
-        optimizer= torch.optim.Adam(
-            self.net.parameters(), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer, self.step_size, self.decay_factor)
+        # optimizer= torch.optim.Adam(
+        #     self.net.parameters())
+        # scheduler = torch.optim.lr_scheduler.StepLR(
+        #     optimizer, self.step_size, self.decay_factor)
 
         # batch = Transition(*zip(*batch))
 
@@ -89,7 +94,6 @@ class DQN(BaseAgent):
         done = np.vstack([x.done for x in batch])
         actions = to_torch_var(actions).long()
 
-        # import pdb; pdb.set_trace()
         Q_pred = self.get_Q(states).gather(1, actions)
         done_mask = (~done).astype(np.float)
         Q_expected = np.max(to_numpy(self.get_Q(next_states)), axis=1)
@@ -98,13 +102,13 @@ class DQN(BaseAgent):
         Q_target = rewards + gamma * Q_expected
         Q_target = to_torch_var(Q_target)
 
-        loss = F.smooth_l1_loss(Q_pred, Q_target)
-        # loss = torch.nn.MSELoss(Q_pred, Q_target)
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
+        loss = self.lossfn(Q_pred, Q_target)
         loss.backward()
         for param in self.net.parameters():
             param.grad.data.clamp_(-1, 1)
-        scheduler.step()
+        self.optimizer.step()
+        # scheduler.step()
         # if time_stamp % self.update_rate == 0:
         #     self.actor_net.load_state_dict(self.net.state_dict())
         return loss

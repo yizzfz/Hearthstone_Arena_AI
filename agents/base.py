@@ -18,6 +18,7 @@ class BaseAgent():
         self.sampling_threshold = sampling_threshold
 
     def select_action(self, state):
+        self.net.eval()
         sample = random.random()
         self.sampling_annealing()
         if sample > self.sampling_threshold:
@@ -26,7 +27,7 @@ class BaseAgent():
                     state = torch.tensor(
                         state, device=device, dtype=torch.float)
                 state = state.unsqueeze(0)
-                res = self.actor_net(state)
+                res = self.net(state)
                 return torch.tensor(
                     [[torch.argmax(res)]],
                     device=device, dtype=torch.long)
@@ -48,8 +49,8 @@ class LinearHead(nn.Module):
     def __init__(self, in_features):
         super().__init__()
         layers = [
-            nn.Linear(in_features, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(in_features, 16),
+            nn.BatchNorm1d(16),
         ]
         self.layers = nn.Sequential(*layers)
 
