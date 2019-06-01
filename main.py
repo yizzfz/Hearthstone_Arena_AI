@@ -33,13 +33,13 @@ def cli():
 @click.argument('environment')
 @click.option('resume', '--resume', default=None, type=str)
 @click.option('episodes', '--episodes', default=100, type=int)
-@click.option('lr', '--lr', default=0.1, type=float)
+@click.option('lr', '--lr', default=0.001, type=float)
 @click.option('lr_episodes', '--lr_episodes', default=1000000, type=int)
 @click.option('min_lr', '--min_lr', default=0.00001, type=float)
 @click.option('eval_only', '--eval_only', is_flag=True)
 @click.option('replay_width', '--replay_width', default=1000, type=int)
 @click.option('batch_size', '--batch_size', default=128, type=int)
-@click.option('gamma', '--gamma', default=0.01, type=float)
+@click.option('gamma', '--gamma', default=0.99, type=float)
 @click.option('update_rate', '--update_rate', default=10, type=int)
 def train(
         method, environment,
