@@ -10,16 +10,26 @@ from log import log
 class DQN_Net(nn.Module):
     def __init__(self, head, n_actions, expand=2):
         super(DQN_Net, self).__init__()
+        # TODO: make a flexible network defition
         self.head = head
         layers = [
-            nn.Linear(16, 16*expand),
-            nn.BatchNorm1d(16*expand),
+            nn.Linear(16, 128*expand),
+            nn.BatchNorm1d(128*expand),
             nn.ReLU(),
-            nn.Linear(16*expand, 16*expand),
-            nn.BatchNorm1d(16*expand),
+            nn.Linear(128*expand, 256*expand),
+            nn.BatchNorm1d(256*expand),
             nn.ReLU(),
-            nn.Linear(16*expand, n_actions)
+            nn.Linear(256*expand, n_actions)
         ]
+        # layers = [
+        #     nn.Linear(16, 16*expand),
+        #     nn.BatchNorm1d(16*expand),
+        #     nn.ReLU(),
+        #     nn.Linear(16*expand, 16*expand),
+        #     nn.BatchNorm1d(16*expand),
+        #     nn.ReLU(),
+        #     nn.Linear(16*expand, n_actions)
+        # ]
         self.layers = nn.Sequential(*layers)
 
     def forward(self, x):

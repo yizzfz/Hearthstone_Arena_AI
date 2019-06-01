@@ -88,7 +88,7 @@ def train(
 
             transition, done = game.step(
                 int(action.to('cpu').numpy()))
-            
+
             if len(memory) > batch_size:
                 batched = memory.sample(batch_size)
                 loss = agent.train(batched, batch_size, gamma, i)
@@ -96,15 +96,14 @@ def train(
 
         reward = game.rewards
         avg_reward.add(reward)
-          
+
         # moving averages
         text = [
-            # f'steps: {agent.step_cnt}',
+            f'steps: {agent.step_cnt}',
             f'game epochs: {i}/{episodes}',
-            f'train loss: {avg_loss:s}',
-            f'reward: {reward:2f}',
-            f'avg reward: {avg_reward:3f}',
-            # f'epsilon: {eps:3f}',
+            f'train loss: {float(avg_loss):.5}',
+            f'avg reward: {float(avg_reward):.5}',
+            f'epsilon: {agent.epsilon:.3}',
         ]
         log.info(', '.join(text), update=True)
 

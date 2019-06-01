@@ -13,15 +13,15 @@ class BaseAgent():
         self.best_loss = None
 
     def sampling_annealing(self):
-        sampling_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
+        epsilon = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1 * self.step_cnt / self.eps_decay)
-        self.sampling_threshold = sampling_threshold
+        self.epsilon = epsilon
 
     def select_action(self, state):
         self.net.eval()
         sample = random.random()
         self.sampling_annealing()
-        if sample > self.sampling_threshold:
+        if sample > self.epsilon:
             with torch.no_grad():
                 if isinstance(state, np.ndarray):
                     state = torch.tensor(
