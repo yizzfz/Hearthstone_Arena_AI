@@ -1,6 +1,8 @@
 import sys
 import click
 import torch
+import time
+import gym
 
 from environment import Game
 from agents import agent_factory
@@ -8,6 +10,8 @@ from util import ReplayMemory
 from itertools import count
 from log import log
 from util import MovingAverage, device
+
+import numpy as np
 
 
 environments_to_names = {
@@ -32,13 +36,13 @@ def cli():
 @click.argument('method')
 @click.argument('environment')
 @click.option('resume', '--resume', default=None, type=str)
-@click.option('episodes', '--episodes', default=100, type=int)
-@click.option('lr', '--lr', default=0.001, type=float)
+@click.option('episodes', '--episodes', default=10000, type=int)
+@click.option('lr', '--lr', default=0.01, type=float)
 @click.option('lr_episodes', '--lr_episodes', default=1000000, type=int)
 @click.option('min_lr', '--min_lr', default=0.00001, type=float)
 @click.option('eval_only', '--eval_only', is_flag=True)
-@click.option('replay_width', '--replay_width', default=1000, type=int)
-@click.option('batch_size', '--batch_size', default=128, type=int)
+@click.option('replay_width', '--replay_width', default=50000, type=int)
+@click.option('batch_size', '--batch_size', default=64, type=int)
 @click.option('gamma', '--gamma', default=0.99, type=float)
 @click.option('update_rate', '--update_rate', default=10, type=int)
 def train(
@@ -60,6 +64,8 @@ def train(
         episodes, update_rate,
         step_size=lr_episodes, lr=lr)
 
+    # agent = Agent(4, 2, 12)
+
     # resume from a ckpt
     if resume is not None:
         agent.load(resume)
@@ -67,42 +73,38 @@ def train(
     avg_reward = MovingAverage(1000)
     avg_loss = MovingAverage(1000)
 
+
     log.info(f'Training with {episodes}, starting ...')
+
     # main training loop
     for i in range(episodes):
-        game.reset()
-        state = game.get_state()
-        for t in count():
+        state = game.reset()
+        done = False
+        loss = None
+        reward = 0
+        while not done:
+            state = game.state
             action = agent.select_action(state)
 
             transition, done = game.step(
                 int(action.to('cpu').numpy()))
+            
+            if len(memory) > batch_size:
+                batched = memory.sample(batch_size)
+                loss = agent.train(batched, batch_size, gamma, i)
+                avg_loss.add(loss)
 
-            # Cache data if memory is not filled
-            if len(memory) < batch_size:
-                if done:
-                    avg_reward.add(game.rewards)
-                    game.reset()
-                    break
-                continue
-            # train with data from the replay memory
-            batched = memory.sample(batch_size)
-            loss = agent.train(
-                batched, batch_size, gamma, i)
-            if done:
-                if loss is not None:
-                    avg_loss.add(loss)
-                avg_reward.add(game.rewards)
-                game.reset()
-                agent.save_best(loss)
-                break
+        reward = game.rewards
+        avg_reward.add(reward)
+          
         # moving averages
         text = [
-            f'steps: {agent.step_cnt}',
+            # f'steps: {agent.step_cnt}',
             f'game epochs: {i}/{episodes}',
             f'train loss: {avg_loss:s}',
+            f'reward: {reward:2f}',
             f'avg reward: {avg_reward:3f}',
-            f'epsilon: {agent.sampling_threshold:3f}',
+            # f'epsilon: {eps:3f}',
         ]
         log.info(', '.join(text), update=True)
 
@@ -131,8 +133,10 @@ def autoplay(
     state = game.get_state()
     for t in count():
         action = agent.select_action(state)
-        transition, done = game.step(
-            int(action.numpy()))
+        transition, done = game.step(int(action.cpu().numpy()))
+        # agent.eval(
+        #     transition, 1, 0.0)
+        time.sleep(0.1)
         if done:
             log.info(f'agent survived {t} steps')
             game.reset()
@@ -161,5 +165,14 @@ cli.add_command(play)
 cli.add_command(autoplay)
 
 
+
 if __name__ == '__main__':
     cli()
+
+
+
+
+
+
+
+

@@ -25,11 +25,11 @@ class Game():
         self.reset()
         if self.force_screen:
             self.state = self.get_screen()
-        else:
-            state = self.env.observation_space.sample()
-            state = torch.from_numpy(
-                np.ascontiguousarray(state))
-            self.state = state.to(device)
+        # else:
+        #     state = self.env.observation_space.sample()
+        #     state = torch.from_numpy(
+        #         np.ascontiguousarray(state))
+        #     self.state = state.to(device)
 
     def get_screen(self):
         # Returned screen requested by gym is 400x600x3, but is sometimes larger
@@ -49,17 +49,22 @@ class Game():
         return self.state
 
     def store_to_memory(self, transition):
+        assert(self.memory is not None)
         if self.memory is not None:
-            self.memory.push(transition)
+            self.memory.push(*transition)
 
     def step(self, action, return_done=True):
         # step and store transition
         next_state, reward, done, _ = self.env.step(action)
         self.rewards += reward
+
+        if done:
+            reward = -1
         if self.force_screen:
             self.last_screen = self.current_screen
             self.current_screen = self.get_screen()
             next_state = self.current_screen
+        
         transition = Transition(self.state, next_state, action, reward, done)
         self.store_to_memory(transition)
         # update state
@@ -74,6 +79,7 @@ class Game():
     def reset(self):
         self.state = self.env.reset()
         self.rewards = 0
+        return self.state
 
 
 

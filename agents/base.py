@@ -26,8 +26,9 @@ class BaseAgent():
                     state = torch.tensor(
                         state, device=device, dtype=torch.float)
                 state = state.unsqueeze(0)
+                res = self.actor_net(state)
                 return torch.tensor(
-                    [[torch.argmax(self.actor_net(state))]],
+                    [[torch.argmax(res)]],
                     device=device, dtype=torch.long)
         else:
             return torch.tensor(

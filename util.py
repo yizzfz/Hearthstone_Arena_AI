@@ -58,10 +58,16 @@ class MovingAverage:
             self.items = self.items[-self.num:]
 
     def mean(self):
-        return np.mean(self.items)
+        if len(self.items) > 0:
+            return np.mean(self.items)
+        else:
+            return np.nan
 
     def std(self):
-        return np.std(self.items)
+        if len(self.items) > 0:
+            return np.std(self.items)
+        else:
+            return np.nan
 
     def flush(self):
         self.items = []
