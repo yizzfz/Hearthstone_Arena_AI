@@ -12,15 +12,20 @@ class BaseAgent():
         self.eps_decay = eps_decay
         self.best_loss = None
 
-    def select_action(self, state):
-        sample = random.random()
+    def sampling_annealing(self):
         sampling_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1 * self.step_cnt / self.eps_decay)
-        if sample > sampling_threshold and self.step_cnt > 100000:
+        self.sampling_threshold = sampling_threshold
+
+    def select_action(self, state):
+        sample = random.random()
+        self.sampling_annealing()
+        if sample > self.sampling_threshold:
             with torch.no_grad():
                 if isinstance(state, np.ndarray):
                     state = torch.tensor(
                         state, device=device, dtype=torch.float)
+                state = state.unsqueeze(0)
                 return torch.tensor(
                     [[torch.argmax(self.actor_net(state))]],
                     device=device, dtype=torch.long)
@@ -42,7 +47,8 @@ class LinearHead(nn.Module):
     def __init__(self, in_features):
         super().__init__()
         layers = [
-            nn.Linear(in_features, 256)
+            nn.Linear(in_features, 256),
+            nn.BatchNorm1d(256),
         ]
         self.layers = nn.Sequential(*layers)
 

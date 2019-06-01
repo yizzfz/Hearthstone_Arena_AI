@@ -14,7 +14,7 @@ class Game():
         self.memory = memory
         self.force_screen = force_screen
         self._game_init(name)
-        self.rewards = []
+        self.rewards = 0
 
     def _game_init(self, name):
         self.env = gym.make(name)
@@ -55,7 +55,7 @@ class Game():
     def step(self, action, return_done=True):
         # step and store transition
         next_state, reward, done, _ = self.env.step(action)
-        self.rewards.append(reward)
+        self.rewards += reward
         if self.force_screen:
             self.last_screen = self.current_screen
             self.current_screen = self.get_screen()
@@ -73,11 +73,7 @@ class Game():
 
     def reset(self):
         self.state = self.env.reset()
-        self.rewards = []
-
-    def average_rewards(self):
-        return sum(self.rewards)
-
+        self.rewards = 0
 
 
 

@@ -81,7 +81,7 @@ def train(
             # Cache data if memory is not filled
             if len(memory) < batch_size:
                 if done:
-                    avg_reward.add(game.average_rewards())
+                    avg_reward.add(game.rewards)
                     game.reset()
                     break
                 continue
@@ -92,7 +92,7 @@ def train(
             if done:
                 if loss is not None:
                     avg_loss.add(loss)
-                avg_reward.add(game.average_rewards())
+                avg_reward.add(game.rewards)
                 game.reset()
                 agent.save_best(loss)
                 break
@@ -102,6 +102,7 @@ def train(
             f'game epochs: {i}/{episodes}',
             f'train loss: {avg_loss:s}',
             f'avg reward: {avg_reward:3f}',
+            f'epsilon: {agent.sampling_threshold:3f}',
         ]
         log.info(', '.join(text), update=True)
 

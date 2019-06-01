@@ -13,9 +13,10 @@ class DQN_Net(nn.Module):
         self.head = head
         layers = [
             nn.Linear(256, 512*expand),
+            nn.BatchNorm1d(512*expand),
             nn.ReLU(),
             nn.Linear(512*expand, 1024*expand),
-            nn.Dropout(p=0.25),
+            nn.BatchNorm1d(1024*expand),
             nn.ReLU(),
             nn.Linear(1024*expand, n_actions)
         ]
@@ -35,7 +36,7 @@ class DQN(BaseAgent):
     def __init__(
             self, state_shape, n_actions, env_name, episodes,
             update_rate=10, eps_start=0.9,
-            eps_end=0.05, eps_decay=200, step_size=1000,
+            eps_end=0.05, eps_decay=10000, step_size=1000,
             decay_factor=0.5, lr=0.01):
         super(DQN, self).__init__(
             eps_start, eps_end, eps_decay
