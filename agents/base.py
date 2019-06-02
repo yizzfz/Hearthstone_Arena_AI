@@ -10,7 +10,7 @@ class BaseAgent():
         self.eps_start = eps_start
         self.eps_end = eps_end
         self.eps_decay = eps_decay
-        self.best_loss = None
+        self.best_reward = 0
 
     def sampling_annealing(self):
         epsilon = self.eps_end + (self.eps_start - self.eps_end) * \
@@ -36,13 +36,11 @@ class BaseAgent():
                 [[random.randrange(self.n_actions)]],
                 device=device, dtype=torch.long)
 
-    def save_best(self, loss):
-        best_loss = loss if self.best_loss is not None else 1000
-
-        if best_loss <= loss:
+    def save_best(self, reward):
+        if self.best_reward >= reward:
             return
         self.save()
-        self.best_loss = loss
+        self.best_reward = reward
 
 
 class LinearHead(nn.Module):

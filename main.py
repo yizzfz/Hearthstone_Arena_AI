@@ -81,7 +81,6 @@ def train(
         state = game.reset()
         done = False
         loss = None
-        reward = 0
         while not done:
             state = game.state
             action = agent.select_action(state)
@@ -93,8 +92,8 @@ def train(
                 batched = memory.sample(batch_size)
                 loss = agent.train(batched, batch_size, gamma, i)
                 avg_loss.add(loss)
-
         reward = game.rewards
+        agent.save_best(reward)
         avg_reward.add(reward)
 
         # moving averages
@@ -103,6 +102,7 @@ def train(
             f'game epochs: {i}/{episodes}',
             f'train loss: {float(avg_loss):.5}',
             f'avg reward: {float(avg_reward):.5}',
+            f'best reward: {float(agent.best_reward):.5}',
             f'epsilon: {agent.epsilon:.3}',
         ]
         log.info(', '.join(text), update=True)
