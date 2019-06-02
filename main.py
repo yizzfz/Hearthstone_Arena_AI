@@ -64,14 +64,12 @@ def train(
         episodes, update_rate,
         step_size=lr_episodes, lr=lr)
 
-    # agent = Agent(4, 2, 12)
-
     # resume from a ckpt
     if resume is not None:
         agent.load(resume)
 
-    avg_reward = MovingAverage(1000)
-    avg_loss = MovingAverage(1000)
+    avg_reward = MovingAverage(100)
+    avg_loss = MovingAverage(100)
 
 
     log.info(f'Training with {episodes}, starting ...')
@@ -93,7 +91,8 @@ def train(
                 loss = agent.train(batched, batch_size, gamma, i)
                 avg_loss.add(loss)
         reward = game.rewards
-        agent.save_best(reward)
+        # agent.save_best(reward)
+        agent.save()
         avg_reward.add(reward)
 
         # moving averages
@@ -102,7 +101,8 @@ def train(
             f'game epochs: {i}/{episodes}',
             f'train loss: {float(avg_loss):.5}',
             f'avg reward: {float(avg_reward):.5}',
-            f'best reward: {float(agent.best_reward):.5}',
+            # f'best reward: {float(agent.best_reward):.5}',
+            f'reward: {float(reward):.5}',
             f'epsilon: {agent.epsilon:.3}',
         ]
         log.info(', '.join(text), update=True)
@@ -123,7 +123,7 @@ def autoplay(
     init_state, state_shape = game.get_state(True)
     n_actions = game.env.action_space.n
     agent_cls = agent_factory[method]
-    agent = agent_cls(state_shape, n_actions, environment, 1, 1)
+    agent = agent_cls(state_shape, n_actions, environment, 1, 1, eps_start=0.01)
     agent.load(resume)
 
     log.info(f'Evaluating agent, loaded from {resume}, starting ...')
@@ -131,6 +131,7 @@ def autoplay(
     game.reset()
     state = game.get_state()
     for t in count():
+        state = game.get_state()
         action = agent.select_action(state)
         transition, done = game.step(int(action.cpu().numpy()))
         # agent.eval(

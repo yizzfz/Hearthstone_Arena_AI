@@ -37,8 +37,8 @@ class BaseAgent():
                 device=device, dtype=torch.long)
 
     def save_best(self, reward):
-        if self.best_reward >= reward:
-            return
+        # if self.best_reward >= reward:
+        #     return
         self.save()
         self.best_reward = reward
 

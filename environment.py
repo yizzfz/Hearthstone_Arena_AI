@@ -49,7 +49,6 @@ class Game():
         return self.state
 
     def store_to_memory(self, transition):
-        assert(self.memory is not None)
         if self.memory is not None:
             self.memory.push(*transition)
 
