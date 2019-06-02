@@ -114,7 +114,7 @@ class DQN(BaseAgent):
         for param in self.net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.scheduler.step()
-        if time_stamp % self.update_rate == 0:
+        if self.step_cnt % self.update_rate == 0:
             self.actor_net.load_state_dict(self.net.state_dict())
         return loss
 
