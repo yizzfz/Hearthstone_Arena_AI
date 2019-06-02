@@ -9,7 +9,7 @@ from agents import agent_factory
 from util import ReplayMemory
 from itertools import count
 from log import log
-from util import MovingAverage, device
+from util import MovingAverage, device, History
 
 import numpy as np
 
@@ -52,8 +52,13 @@ def train(
         lr, lr_steps, min_lr,
         eval_only, replay_width,
         batch_size, gamma, update_rate, save_interval):
-    memory = ReplayMemory(replay_width)
 
+    history = History(
+        method+'_'+environment,
+        ['steps', 'avg_reward', 'loss'],
+        resume is not None)
+    history.flush()
+    memory = ReplayMemory(replay_width)
     game = Game(
         name=environments_to_names[environment],
         memory=memory, render=False)
@@ -107,6 +112,12 @@ def train(
             f'epsilon: {agent.epsilon:.3}',
         ]
         log.info(', '.join(text), update=True)
+        if agent.step_cnt % save_interval == 0:
+            history.record({
+                'steps': agent.step_cnt,
+                'avg_reward': float(avg_reward),
+                'loss': float(avg_loss),
+            })
 
 
     game.env.close()

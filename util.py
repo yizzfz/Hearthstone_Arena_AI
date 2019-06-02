@@ -1,7 +1,9 @@
+import os
 import torch
 import random
 import numpy as np
 from collections import namedtuple
+from log import log
 
 
 Transition = namedtuple('Transition',
