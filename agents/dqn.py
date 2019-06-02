@@ -1,26 +1,35 @@
-from .base import BaseAgent, LinearHead, ConvHead
+from .base import BaseAgent, LinearHead, ConvHead, get_linear
 from torch import nn
 from util import Transition, MovingAverage, device, to_torch_var, to_numpy
 from torch.nn import functional as F
 import torch
 import numpy as np
+import copy
 from log import log
 
+network_structure = {
+    'head': {'type': 'linear', 'out_features': 16},
+    'linear1': {'in_features': 16, 'out_features': 128},
+    'linear2': {'in_features': 128, 'out_features': 256},
+    'linear3_final': {'in_features': 256, 'out_features': 2},
+}
 
 class DQN_Net(nn.Module):
     def __init__(self, head, n_actions, expand=2):
         super(DQN_Net, self).__init__()
         # TODO: make a flexible network defition
         self.head = head
-        layers = [
-            nn.Linear(16, 128*expand),
-            nn.BatchNorm1d(128*expand),
-            nn.ReLU(),
-            nn.Linear(128*expand, 256*expand),
-            nn.BatchNorm1d(256*expand),
-            nn.ReLU(),
-            nn.Linear(256*expand, n_actions)
-        ]
+        layers = []
+
+        for t, args in network_structure.items():
+            args = copy.deepcopy(args)
+            if 'linear' in t:
+                if t != 'linear1':
+                    args['in_features'] *= expand
+                if not 'final' in t:
+                    args['out_features'] *= expand
+                layers += get_linear(**args)
+
         self.layers = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -42,8 +51,10 @@ class DQN(BaseAgent):
         super(DQN, self).__init__(
             eps_start, eps_end, eps_decay
         )
-        if len(state_shape) <= 4:
-            self.head = LinearHead(state_shape[0])
+        if network_structure['head']['type'] == 'linear':
+            self.head = LinearHead(
+                in_features=state_shape[0],
+                out_features=network_structure['head']['out_features'])
         else:
             self.head = ConvHead(state_shape)
 

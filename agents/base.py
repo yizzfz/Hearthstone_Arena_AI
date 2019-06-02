@@ -43,11 +43,11 @@ class BaseAgent():
 
 
 class LinearHead(nn.Module):
-    def __init__(self, in_features):
+    def __init__(self, in_features, out_features=16):
         super().__init__()
         layers = [
-            nn.Linear(in_features, 16),
-            nn.BatchNorm1d(16),
+            nn.Linear(in_features, out_features),
+            nn.BatchNorm1d(out_features),
         ]
         self.layers = nn.Sequential(*layers)
 
@@ -67,4 +67,12 @@ class ConvHead(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
+
+
+def get_linear(in_features, out_features):
+    # linear combo with batchnorm 1d and relu
+    return [
+        nn.Linear(in_features, out_features),
+        nn.BatchNorm1d(out_features),
+        nn.ReLU()]
 

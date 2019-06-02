@@ -38,7 +38,7 @@ def cli():
 @click.option('resume', '--resume', default=None, type=str)
 @click.option('episodes', '--episodes', default=10000, type=int)
 @click.option('lr', '--lr', default=0.01, type=float)
-@click.option('lr_episodes', '--lr_episodes', default=1000000, type=int)
+@click.option('lr_steps', '--lr_steps', default=1000000, type=int)
 @click.option('min_lr', '--min_lr', default=0.00001, type=float)
 @click.option('eval_only', '--eval_only', is_flag=True)
 @click.option('replay_width', '--replay_width', default=50000, type=int)
@@ -49,7 +49,7 @@ def cli():
 def train(
         method, environment,
         resume, episodes,
-        lr, lr_episodes, min_lr,
+        lr, lr_steps, min_lr,
         eval_only, replay_width,
         batch_size, gamma, update_rate, save_interval):
     memory = ReplayMemory(replay_width)
@@ -63,7 +63,7 @@ def train(
     agent = agent_cls(
         state_shape, n_actions, environment,
         episodes, update_rate,
-        step_size=lr_episodes, lr=lr, save_interval=save_interval)
+        step_size=lr_steps, lr=lr, save_interval=save_interval)
 
     # resume from a ckpt
     if resume is not None:
