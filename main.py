@@ -45,12 +45,13 @@ def cli():
 @click.option('batch_size', '--batch_size', default=64, type=int)
 @click.option('gamma', '--gamma', default=0.99, type=float)
 @click.option('update_rate', '--update_rate', default=10, type=int)
+@click.option('save_interval', '--save_interval', default=1000, type=int)
 def train(
         method, environment,
         resume, episodes,
         lr, lr_episodes, min_lr,
         eval_only, replay_width,
-        batch_size, gamma, update_rate):
+        batch_size, gamma, update_rate, save_interval):
     memory = ReplayMemory(replay_width)
 
     game = Game(
@@ -62,7 +63,7 @@ def train(
     agent = agent_cls(
         state_shape, n_actions, environment,
         episodes, update_rate,
-        step_size=lr_episodes, lr=lr)
+        step_size=lr_episodes, lr=lr, save_interval=save_interval)
 
     # resume from a ckpt
     if resume is not None:
@@ -123,7 +124,7 @@ def autoplay(
     init_state, state_shape = game.get_state(True)
     n_actions = game.env.action_space.n
     agent_cls = agent_factory[method]
-    agent = agent_cls(state_shape, n_actions, environment, 1, 1, eps_start=0.01)
+    agent = agent_cls(state_shape, n_actions, environment, 1, 1, eps_start=0.0)
     agent.load(resume)
 
     log.info(f'Evaluating agent, loaded from {resume}, starting ...')
